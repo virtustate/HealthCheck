@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace HealthCheck
 {
@@ -36,6 +37,13 @@ namespace HealthCheck
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            /* app.UsePathBase("/HealthCheck");
+            app.Use((context, next) =>
+            {
+                context.Request.PathBase = "/HealthCheck";
+                return next();
+            });
+            */
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -84,6 +92,15 @@ namespace HealthCheck
             }
 
             app.UseRouting();
+            // Invoke the UseForwardedHeaders middleware and configure it 
+            // to forward the X-Forwarded-For and X-Forwarded-Proto headers.
+            // NOTE: This must be put BEFORE calling UseAuthentication 
+            // and other authentication scheme middlewares.
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                | ForwardedHeaders.XForwardedProto
+            });
             app.UseHealthChecks("/hc", new CustomHealthCheckOptions());
 
             app.UseEndpoints(endpoints =>
